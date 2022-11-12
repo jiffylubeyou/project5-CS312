@@ -96,6 +96,7 @@ class TSPSolver:
 	'''
 		
 	def branchAndBound( self, time_allowance=60.0 ):
+		start_time = time.time()
 		cities = self._scenario.getCities()
 		ncities = len(cities)
 		x = [[cities[i].costTo(cities[j]) for j in range(ncities)] for i in range(ncities)]
@@ -105,10 +106,32 @@ class TSPSolver:
 		reducedX = response[0]
 		reducedCost = response[1]
 
+		# This response should have an array on 0 should have array of city indicis path and at 1 it should have the cost
 		response = self.pathFinder(ncities, reducedX, set(), 0, reducedCost, [0])
 
+		# turn indices into array of cities
+		routeArray = response[0]
+		route = []
+		for i in range(len(routeArray)):
+			route.append(cities[routeArray[i]])
+		# 	this result is like the bssf in the example default
+		result = TSPSolution(route)
+		result.cost = response[1]
+		end_time = time.time()
 
-		pass
+
+		results = {}
+		results['cost'] = result.cost
+		results['time'] = end_time - start_time
+		results['count'] = 10
+		results['soln'] = result
+		results['max'] = None
+		results['total'] = None
+		results['pruned'] = None
+
+
+
+		return results
 
 
 
