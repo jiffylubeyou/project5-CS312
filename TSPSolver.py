@@ -96,6 +96,29 @@ class TSPSolver:
 	'''
 		
 	def branchAndBound( self, time_allowance=60.0 ):
+		cities = self._scenario.getCities()
+		ncities = len(cities)
+		x = [[cities[i].costTo(cities[j]) for j in range(ncities)] for i in range(ncities)]
+		# we've built the matrix, now begin reducing the rows
+
+		# loop through the i
+		reducedCost = 0
+		for i in range(ncities):
+			myMin = min(x[i])
+			reducedCost = reducedCost + myMin
+			for j in range(ncities):
+				x[i][j] = x[i][j] - myMin
+
+
+		# now loop through the j using a transpose of x
+		xTranspose = [[x[j][i] for j in range(ncities)] for i in range(ncities)]
+		for i in range(ncities):
+			myMin = min(xTranspose[i])
+			reducedCost = reducedCost + myMin
+			for j in range(ncities):
+				xTranspose[i][j] = xTranspose[i][j] - myMin
+
+		reduced = [[xTranspose[j][i] for j in range(ncities)] for i in range(ncities)]
 		pass
 
 
