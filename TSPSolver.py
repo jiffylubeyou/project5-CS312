@@ -99,26 +99,15 @@ class TSPSolver:
 		cities = self._scenario.getCities()
 		ncities = len(cities)
 		x = [[cities[i].costTo(cities[j]) for j in range(ncities)] for i in range(ncities)]
-		# we've built the matrix, now begin reducing the rows
+		# we've built the matrix, now reduce it
 
-		# loop through the i
-		reducedCost = 0
-		for i in range(ncities):
-			myMin = min(x[i])
-			reducedCost = reducedCost + myMin
-			for j in range(ncities):
-				x[i][j] = x[i][j] - myMin
+		response = self.reduce2DArray(x)
+		reducedX = response[0]
+		reducedCost = response[1]
+
+		response = self.pathFinder(ncities, reducedX, set(), 0, reducedCost, [0])
 
 
-		# now loop through the j using a transpose of x
-		xTranspose = [[x[j][i] for j in range(ncities)] for i in range(ncities)]
-		for i in range(ncities):
-			myMin = min(xTranspose[i])
-			reducedCost = reducedCost + myMin
-			for j in range(ncities):
-				xTranspose[i][j] = xTranspose[i][j] - myMin
-
-		reduced = [[xTranspose[j][i] for j in range(ncities)] for i in range(ncities)]
 		pass
 
 
@@ -136,5 +125,62 @@ class TSPSolver:
 		pass
 		
 
+	# Returns a tuple of [reducedX, reducedCost]
+	def reduce2DArray(self, x):
+		# loop through i and reduce rows
+		reducedCost = 0
+		for i in range(len(x)):
+			myMin = min(x[i])
+			reducedCost = reducedCost + myMin
+			for j in range(len(x)):
+				x[i][j] = x[i][j] - myMin
+
+		# now loop through the j using a transpose of x
+		xTranspose = [[x[j][i] for j in range(len(x))] for i in range(len(x))]
+		for i in range(len(x)):
+			myMin = min(xTranspose[i])
+			reducedCost = reducedCost + myMin
+			for j in range(len(x)):
+				xTranspose[i][j] = xTranspose[i][j] - myMin
+
+		reducedX = [[xTranspose[j][i] for j in range(len(x))] for i in range(len(x))]
+		return [reducedX, reducedCost]
+
+	# routeArray should start with one index already at 0 and startIndex starts at 0
+	def pathFinder(self, ncities, reducedX, pathSet, startIndex, currCost, routeArray):
+		minDict = {}
+		for n in range(ncities):
+			if (n == startIndex):
+				continue
+			if (n in pathSet):
+				continue
+			minDict[n] = self.reducedCostTo(startIndex, n, reducedX, pathSet, currCost)
+		winnerIndex = min(minDict, key=minDict.get)
+		winnerCost = minDict[winnerIndex]
+		pathSet.add(startIndex)
+		pathSet.add(winnerIndex)
+		routeArray.append(winnerIndex)
+		if len(pathSet) != ncities:
+			return self.pathFinder(ncities, reducedX, pathSet, winnerIndex, winnerCost, routeArray)
+		else:
+			return [routeArray, winnerCost]
 
 
+
+	def reducedCostTo(self, startIndex, destIndex, reducedX, pathSet, prevCost):
+		newX = [[0 for j in range(len(reducedX))] for i in range(len(reducedX))]
+		for i in range(len(reducedX)):
+			for j in range(len(reducedX)):
+				if (startIndex == i):
+					newX[i][j] = float('inf')
+				elif(destIndex == j):
+					newX[i][j] = float('inf')
+				elif((startIndex == j) and (destIndex == i)):
+					newX[i][j] = float('inf')
+				elif((j in pathSet) and (destIndex == i)):
+					newX[i][j] = float('inf')
+				else:
+					newX[i][j] = reducedX[i][j]
+		response = self.reduce2DArray(reducedX)
+		totalCost = reducedX[startIndex][destIndex] + prevCost + response[1]
+		return totalCost
