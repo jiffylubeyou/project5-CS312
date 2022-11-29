@@ -98,36 +98,49 @@ class TSPSolver:
 	def branchAndBound( self, time_allowance=60.0 ):
 		start_time = time.time()
 		cities = self._scenario.getCities()
-		ncities = len(cities)
-		x = [[cities[i].costTo(cities[j]) for j in range(ncities)] for i in range(ncities)]
-		# we've built the matrix, now reduce it
+		chosenRes = None
+		currMin = float('inf')
+		numResults = 0
+		stateTotal = 0
+		for city in cities:
+			ncities = len(cities)
+			x = [[cities[i].costTo(cities[j]) for j in range(ncities)] for i in range(ncities)]
+			# we've built the matrix, now reduce it
 
-		response = self.reduce2DArray(x)
-		reducedX = response[0]
-		reducedCost = response[1]
+			response = self.reduce2DArray(x)
+			reducedX = response[0]
+			reducedCost = response[1]
 
-		# This response should have an array on 0 should have array of city indicis path and at 1 it should have the cost
-		response = self.pathFinder(ncities, reducedX, set(), 0, reducedCost, [0])
-
+			# This response should have an array on 0 should have array of city indicis path and at 1 it should have the cost
+			response = self.pathFinder(ncities, reducedX, set(), 0, reducedCost, [0], 1)
+			stateTotal = stateTotal + response[2]
+			if currMin == response[1]:
+				numResults = numResults + 1
+			if currMin > response[1]:
+				numResults = 1
+				currMin = response[1]
+				chosenRes = response
+			cities.append(cities.pop(0))
 		# turn indices into array of cities
-		routeArray = response[0]
+		routeArray = chosenRes[0]
+		bssfCount = chosenRes[2]
 		route = []
 		for i in range(len(routeArray)):
 			route.append(cities[routeArray[i]])
 		# 	this result is like the bssf in the example default
 		result = TSPSolution(route)
-		result.cost = response[1]
+		result.cost = chosenRes[1]
 		end_time = time.time()
 
 
 		results = {}
 		results['cost'] = result.cost
 		results['time'] = end_time - start_time
-		results['count'] = 10
+		results['count'] = numResults
 		results['soln'] = result
-		results['max'] = None
-		results['total'] = None
-		results['pruned'] = None
+		results['max'] = bssfCount
+		results['total'] = stateTotal
+		results['pruned'] = stateTotal - bssfCount
 
 
 
@@ -170,7 +183,7 @@ class TSPSolver:
 		return [reducedX, reducedCost]
 
 	# routeArray should start with one index already at 0 and startIndex starts at 0
-	def pathFinder(self, ncities, reducedX, pathSet, startIndex, currCost, routeArray):
+	def pathFinder(self, ncities, reducedX, pathSet, startIndex, currCost, routeArray, bssf):
 		minDict = {}
 		for n in range(ncities):
 			if (n == startIndex):
@@ -178,15 +191,16 @@ class TSPSolver:
 			if (n in pathSet):
 				continue
 			minDict[n] = self.reducedCostTo(startIndex, n, reducedX, pathSet, currCost)
+			bssf = bssf + 1
 		winnerIndex = min(minDict, key=minDict.get)
 		winnerCost = minDict[winnerIndex]
 		pathSet.add(startIndex)
 		pathSet.add(winnerIndex)
 		routeArray.append(winnerIndex)
 		if len(pathSet) != ncities:
-			return self.pathFinder(ncities, reducedX, pathSet, winnerIndex, winnerCost, routeArray)
+			return self.pathFinder(ncities, reducedX, pathSet, winnerIndex, winnerCost, routeArray, bssf)
 		else:
-			return [routeArray, winnerCost]
+			return [routeArray, winnerCost, bssf]
 
 
 
