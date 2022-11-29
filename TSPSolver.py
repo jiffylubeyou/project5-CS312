@@ -107,7 +107,6 @@ class TSPSolver:
 		stateTotal = 0
 		ncities = len(cities)
 		for useless in range(ncities):
-			x = []
 			x = [[rotateArray[i].costTo(rotateArray[j]) for j in range(ncities)] for i in range(ncities)]
 			# we've built the matrix, now reduce it
 
@@ -133,7 +132,7 @@ class TSPSolver:
 			if currMin == response[1]:
 				numResults = numResults + 1
 			if currMin > response[1]:
-				numResults = 1
+				numResults = 1 + numResults
 				currMin = response[1]
 				chosenRes = response
 			rotateArray.append(rotateArray.pop(0))
