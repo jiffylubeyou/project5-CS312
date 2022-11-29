@@ -138,6 +138,8 @@ class TSPSolver:
 				chosenRes = response
 			rotateArray.append(rotateArray.pop(0))
 		# turn indices into array of cities
+		if chosenRes == None:
+			chosenRes = [[], float('inf'), None]
 		routeArray = chosenRes[0]
 		bssfCount = chosenRes[2]
 		route = []
