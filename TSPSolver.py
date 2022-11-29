@@ -98,13 +98,17 @@ class TSPSolver:
 	def branchAndBound( self, time_allowance=60.0 ):
 		start_time = time.time()
 		cities = self._scenario.getCities()
+		rotateArray = []
+		for city in cities:
+			rotateArray.append(city)
 		chosenRes = None
 		currMin = float('inf')
 		numResults = 0
 		stateTotal = 0
-		for city in cities:
-			ncities = len(cities)
-			x = [[cities[i].costTo(cities[j]) for j in range(ncities)] for i in range(ncities)]
+		ncities = len(cities)
+		for useless in range(ncities):
+			x = []
+			x = [[rotateArray[i].costTo(rotateArray[j]) for j in range(ncities)] for i in range(ncities)]
 			# we've built the matrix, now reduce it
 
 			response = self.reduce2DArray(x)
@@ -113,6 +117,18 @@ class TSPSolver:
 
 			# This response should have an array on 0 should have array of city indicis path and at 1 it should have the cost
 			response = self.pathFinder(ncities, reducedX, set(), 0, reducedCost, [0], 1)
+			cost = 0
+			tempRoute = []
+			# calculate the total cost of the current proposed route
+			for i in range(len(response[0])):
+				tempRoute.append(cities[response[0][i]])
+			for i in range(len(tempRoute)):
+				if i == (len(tempRoute) - 1):
+					cost = cost + tempRoute[0].costTo(tempRoute[-1])
+				else:
+					cost = cost + tempRoute[i].costTo(tempRoute[i+1])
+			response[1] = cost
+
 			stateTotal = stateTotal + response[2]
 			if currMin == response[1]:
 				numResults = numResults + 1
@@ -120,7 +136,7 @@ class TSPSolver:
 				numResults = 1
 				currMin = response[1]
 				chosenRes = response
-			cities.append(cities.pop(0))
+			rotateArray.append(rotateArray.pop(0))
 		# turn indices into array of cities
 		routeArray = chosenRes[0]
 		bssfCount = chosenRes[2]
